@@ -31,6 +31,7 @@ except IOError:
     print(f"Could not open font file at {font_path}. Please check the path and try again.")
     exit()
 
+
 def put_bangla_text(image, text, position, font):
     # Convert the image to PIL format
     image_pil = Image.fromarray(image)
@@ -40,10 +41,11 @@ def put_bangla_text(image, text, position, font):
     # Convert back to OpenCV format
     return np.array(image_pil)
 
+
 # Dictionary mapping indices to the corresponding English words
 index_to_word = [
-    'Bad', 'Beautiful', 'Friend', 'Good', 'House',
-    'Me', 'My', 'Request', 'Skin', 'Urine', 'You'
+    'Anger', 'Fear', 'Grateful', 'Hatred', 'Hope',
+    'Joy', 'Love', 'Sadness', 'Shame', 'Trust'
 ]
 
 # Confidence threshold for displaying predictions

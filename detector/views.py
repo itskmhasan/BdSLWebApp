@@ -1,41 +1,65 @@
 import cv2
 import numpy as np
 import tensorflow as tf
+from django.http import StreamingHttpResponse
 from django.shortcuts import render
 from django.core.files.storage import FileSystemStorage
 from django.conf import settings
 import os
-from googletrans import Translator  # Import Google Translate API
+from googletrans import Translator
 from rembg import remove
 from detector.forms import SignImageForm
+import mediapipe as mp
+import sys
+
+sys.stdout.reconfigure(encoding='utf-8')
 
 # Load the trained model
 model = tf.keras.models.load_model(os.path.join(settings.BASE_DIR, 'sign_language_cnn_model.keras'))
 
 # Dictionary mapping index to sign
-index_to_word = {0: 'Bad', 1: 'Beautiful', 2: 'Friend', 3: 'Good', 4: 'House', 5: 'Me', 6: 'My', 7: 'Request',
-                 8: 'Skin', 9: 'Urine', 10: 'You'}
+# Dictionary mapping index to sign
+index_to_word = {
+    0: 'Anger', 1: 'Fear', 2: 'Grateful', 3: 'Hatred', 4: 'Hope',
+    5: 'Joy', 6: 'Love', 7: 'Sadness', 8: 'Shame', 9: 'Trust'
+}
 
 # Initialize Google Translate API
 translator = Translator()
 
 
 def predict_sign(image_path):
-    # Read and preprocess the image
+    """Predict sign from image path and return the sign, its translation, and accuracy."""
+    # Read the image
     img = cv2.imread(image_path)
-    img_resized = cv2.resize(img, (224, 224))  # Resize to model input shape
-    img_normalized = img_resized / 255.0  # Normalize
+
+    # Check if the image was properly loaded
+    if img is None:
+        print(f"Error: Could not read the image from {image_path}")
+        return "Unknown", "Unknown", 0.0  # Added accuracy return
+
+    # Preprocess the image for the model
+    img_resized = cv2.resize(img, (224, 224))  # Resize to match the model's input shape
+    img_normalized = img_resized / 255.0  # Normalize the image
     img_batch = np.expand_dims(img_normalized, axis=0)  # Add batch dimension
 
-    # Make prediction
+    # Make predictions
     predictions = model.predict(img_batch)
     predicted_class = np.argmax(predictions)  # Get the index of the highest prediction
-    return index_to_word.get(predicted_class, "Unknown")
+    predicted_sign = index_to_word.get(predicted_class, "Unknown")
+    confidence = np.max(predictions)  # Get the confidence of the prediction
+
+    # Translate the detected sign to Bengali
+    translated_sign = translate_to_bengali(predicted_sign)
+
+    return predicted_sign, translated_sign, confidence  # Return confidence as well
+
 
 
 def translate_to_bengali(text):
     """Translate the detected sign to Bengali."""
     try:
+        # Translate the sign to Bengali using Google Translate
         translation = translator.translate(text, src='en', dest='bn')
         return translation.text
     except Exception as e:
@@ -44,6 +68,7 @@ def translate_to_bengali(text):
 
 
 def upload_image(request):
+    """Handle the image upload, background removal, prediction, and translation."""
     if request.method == 'POST':
         form = SignImageForm(request.POST, request.FILES)
         if form.is_valid():
@@ -71,19 +96,26 @@ def upload_image(request):
             # Generate the URL for the image with the background removed
             bg_removed_image_url = fs.url('bg_removed_' + uploaded_file.name)
 
-            # Get the predicted sign
-            predicted_sign = predict_sign(output_image_path)
+            # Get the predicted sign and its translation
+            predicted_sign, translated_sign, confidence = predict_sign(output_image_path)
 
-            # Translate the predicted sign to Bengali
-            translated_sign = translate_to_bengali(predicted_sign)
+            # Handle no hand detection message
+            if predicted_sign == "No hands detected":
+                confidence_message = "No hands detected"
+                accuracy = "N/A"  # Set accuracy as not available
+            else:
+                confidence_message = f"Confidence: {confidence:.2f}"
+                accuracy = f"{confidence:.2%}"  # Format accuracy as percentage
 
-            # Pass the path of the background-removed image and the translation result to the result template
+            # Pass the path of the background-removed image and the prediction results to the result template
             context = {
                 'form': form,
                 'image_url': uploaded_image_path,
                 'bg_removed_image_url': bg_removed_image_url,
-                'predicted_sign': predicted_sign,  # Original sign prediction
-                'translated_sign': translated_sign  # Translated sign in Bengali
+                'predicted_sign': predicted_sign,
+                'translated_sign': translated_sign,
+                'confidence_message': confidence_message,
+                'accuracy': accuracy,
             }
             return render(request, 'result.html', context)
     else:

@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Language Detection</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #video-container {
+            position: relative;
+        }
+
+        #video {
+            width: 640px;
+            height: 480px;
+        }
+
+        #result {
+            position: absolute;
+            bottom: 30px;
+            left: 10px;
+            color: white;
+            font-size: 20px;
+            background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent background */
+            padding: 5px;
+        }
+    </style>
+</head>
+<body>
+<h1>Real-Time Sign Language Detection</h1>
+<div id="video-container">
+    <img id="video" src="{% url 'video_feed' %}" alt="Video Feed">
+    <div id="result">
+        <p id="predicted_sign">Sign: </p>
+        <p id="confidence">Confidence: </p>
+    </div>
+</div>
+
+<script>
+    // This script can be used to update the sign and confidence dynamically
+    function updateResults(sign, confidence) {
+        document.getElementById('predicted_sign').innerText = `Sign: ${sign}`;
+        document.getElementById('confidence').innerText = `Confidence: ${confidence.toFixed(2)}`;
+    }
+
+    // You can set an interval to fetch the latest data if needed
+    // Or implement WebSocket for real-time updates if desired
+</script>
+</body>
+</html>
