@@ -15,33 +15,29 @@ model = tf.keras.models.load_model(os.path.join(settings.BASE_DIR, 'sign_languag
 # Initialize MediaPipe hands
 mp_hands = mp.solutions.hands
 hands = mp_hands.Hands()
+# index_to_word = {
+#     0: 'Anger', 1: 'Fear', 2: 'Grateful', 3: 'Hatred', 4: 'Hope',
+#     5: 'Joy', 6: 'Love', 7: 'Sadness', 8: 'Shame', 9: 'Trust'
+# }
+
 index_to_word = {
-    0: 'Anger', 1: 'Fear', 2: 'Grateful', 3: 'Hatred', 4: 'Hope',
-    5: 'Joy', 6: 'Love', 7: 'Sadness', 8: 'Shame', 9: 'Trust'
+    0: 'Bad', 1: 'Beautiful', 2: 'Friend', 3: 'Good', 4: 'House',
+    5: 'Me', 6: 'My', 7: 'Request', 8: 'Skin', 9: 'Urine', 10: 'You'
 }
 
 
 def video_predict_sign(frame):
-    # Convert the frame to RGB
-    rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-    results = hands.process(rgb_frame)
+    img_resized = cv2.resize(frame, (224, 224))
+    img_normalized = img_resized / 255.0
+    img_batch = np.expand_dims(img_normalized, axis=0)
 
-    # Check if any hands are detected
-    if results.multi_hand_landmarks:
-        # Prepare the image for prediction
-        img_resized = cv2.resize(frame, (224, 224))
-        img_normalized = img_resized / 255.0
-        img_batch = np.expand_dims(img_normalized, axis=0)
+    # Make predictions
+    predictions = model.predict(img_batch)
+    predicted_class = np.argmax(predictions)
+    predicted_sign = index_to_word.get(predicted_class, "Unknown")
+    confidence = np.max(predictions)  # Get the confidence score
 
-        # Make predictions
-        predictions = model.predict(img_batch)
-        predicted_class = np.argmax(predictions)
-        predicted_sign = index_to_word.get(predicted_class, "Unknown")
-        confidence = np.max(predictions)  # Get the confidence score
-
-        return predicted_sign, confidence
-    else:
-        return "No hands detected", 0.0  # Return 0 confidence if no hands are detected
+    return predicted_sign, confidence
 
 
 def video_stream():

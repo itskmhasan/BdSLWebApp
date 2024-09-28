@@ -19,9 +19,14 @@ model = tf.keras.models.load_model(os.path.join(settings.BASE_DIR, 'sign_languag
 
 # Dictionary mapping index to sign
 # Dictionary mapping index to sign
+# index_to_word = {
+#     0: 'Anger', 1: 'Fear', 2: 'Grateful', 3: 'Hatred', 4: 'Hope',
+#     5: 'Joy', 6: 'Love', 7: 'Sadness', 8: 'Shame', 9: 'Trust'
+# }
+
 index_to_word = {
-    0: 'Anger', 1: 'Fear', 2: 'Grateful', 3: 'Hatred', 4: 'Hope',
-    5: 'Joy', 6: 'Love', 7: 'Sadness', 8: 'Shame', 9: 'Trust'
+    0: 'Bad', 1: 'Beautiful', 2: 'Friend', 3: 'Good', 4: 'House',
+    5: 'Me', 6: 'My', 7: 'Request', 8: 'Skin', 9: 'Urine', 10: 'You'
 }
 
 # Initialize Google Translate API
@@ -53,7 +58,6 @@ def predict_sign(image_path):
     translated_sign = translate_to_bengali(predicted_sign)
 
     return predicted_sign, translated_sign, confidence  # Return confidence as well
-
 
 
 def translate_to_bengali(text):

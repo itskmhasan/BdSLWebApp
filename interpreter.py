@@ -43,11 +43,14 @@ def put_bangla_text(image, text, position, font):
 
 
 # Dictionary mapping indices to the corresponding English words
+# index_to_word = [
+#     'Anger', 'Fear', 'Grateful', 'Hatred', 'Hope',
+#     'Joy', 'Love', 'Sadness', 'Shame', 'Trust'
+# ]
 index_to_word = [
-    'Anger', 'Fear', 'Grateful', 'Hatred', 'Hope',
-    'Joy', 'Love', 'Sadness', 'Shame', 'Trust'
+    'Bad', 'Beautiful', 'Friend', 'Good', 'House',
+    'Me', 'My', 'Request', 'Skin', 'Urine', 'You'
 ]
-
 # Confidence threshold for displaying predictions
 CONFIDENCE_THRESHOLD = 0.7
 
