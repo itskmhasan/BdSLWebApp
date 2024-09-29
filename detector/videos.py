@@ -1,79 +1,106 @@
+import pickle
 import cv2
 import numpy as np
-import tensorflow as tf
+import mediapipe as mp
 from django.http import StreamingHttpResponse
 from django.shortcuts import render
 from django.conf import settings
 import os
 
-# Assuming you are using MediaPipe for hand tracking
-import mediapipe as mp
+# Load the model
+model_dict = pickle.load(open(os.path.join(settings.BASE_DIR, 'model.p'), 'rb'))
+model = model_dict['model']
 
-# Load the trained model
-model = tf.keras.models.load_model(os.path.join(settings.BASE_DIR, 'sign_language_cnn_model.keras'))
-
-# Initialize MediaPipe hands
+# Initialize MediaPipe Hands and drawing utilities
 mp_hands = mp.solutions.hands
-hands = mp_hands.Hands()
-# index_to_word = {
-#     0: 'Anger', 1: 'Fear', 2: 'Grateful', 3: 'Hatred', 4: 'Hope',
-#     5: 'Joy', 6: 'Love', 7: 'Sadness', 8: 'Shame', 9: 'Trust'
-# }
+mp_drawing = mp.solutions.drawing_utils
+mp_drawing_styles = mp.solutions.drawing_styles
+hands = mp_hands.Hands(static_image_mode=True, min_detection_confidence=0.3)
 
-index_to_word = {
-    0: 'Bad', 1: 'Beautiful', 2: 'Friend', 3: 'Good', 4: 'House',
-    5: 'Me', 6: 'My', 7: 'Request', 8: 'Skin', 9: 'Urine', 10: 'You'
-}
+# Labels dictionary (mapping prediction index to sign)
+labels_dict = model_dict['labels_dict']
 
 
-def video_predict_sign(frame):
-    img_resized = cv2.resize(frame, (224, 224))
-    img_normalized = img_resized / 255.0
-    img_batch = np.expand_dims(img_normalized, axis=0)
-
-    # Make predictions
-    predictions = model.predict(img_batch)
-    predicted_class = np.argmax(predictions)
-    predicted_sign = index_to_word.get(predicted_class, "Unknown")
-    confidence = np.max(predictions)  # Get the confidence score
-
-    return predicted_sign, confidence
+def video_predict_sign(data_aux):
+    # Make prediction using the model
+    prediction_probs = model.predict_proba([np.asarray(data_aux)])  # Get probabilities
+    predicted_index = np.argmax(prediction_probs)  # Get the index of the highest probability
+    predicted_character = str(labels_dict[predicted_index])  # Get the predicted character
+    confidence = prediction_probs[0][predicted_index] * 100  # Get confidence as a percentage
+    return predicted_character, confidence
 
 
 def video_stream():
-    cap = cv2.VideoCapture(0)  # Capture from the default camera
+    cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)  # Capture from the default camera
+
+    if not cap.isOpened():
+        print("Error: Could not open video capture.")
+        return
+
     while True:
+        data_aux = []
+        x_ = []
+        y_ = []
+
+        # Capture frame from the webcam
         ret, frame = cap.read()
+
         if not ret:
+            print("Error: Failed to capture frame.")
             break
 
-        # Convert the BGR frame to RGB for MediaPipe
-        rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        results = hands.process(rgb_frame)
+        # Get the frame's dimensions
+        H, W, _ = frame.shape
 
-        # Draw hand landmarks and bounding box if hands are detected
+        # Convert the image from BGR (OpenCV default) to RGB (MediaPipe uses RGB)
+        frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+
+        # Process the frame to detect hands
+        results = hands.process(frame_rgb)
+
         if results.multi_hand_landmarks:
             for hand_landmarks in results.multi_hand_landmarks:
-                # Draw landmarks
-                mp.solutions.drawing_utils.draw_landmarks(frame, hand_landmarks, mp_hands.HAND_CONNECTIONS)
+                # Draw hand landmarks on the frame
+                mp_drawing.draw_landmarks(
+                    frame,
+                    hand_landmarks,
+                    mp_hands.HAND_CONNECTIONS,
+                    mp_drawing_styles.get_default_hand_landmarks_style(),
+                    mp_drawing_styles.get_default_hand_connections_style()
+                )
 
-                # Get the bounding box coordinates
-                h, w, _ = frame.shape
-                x_min = int(min([lm.x for lm in hand_landmarks.landmark]) * w)
-                x_max = int(max([lm.x for lm in hand_landmarks.landmark]) * w)
-                y_min = int(min([lm.y for lm in hand_landmarks.landmark]) * h)
-                y_max = int(max([lm.y for lm in hand_landmarks.landmark]) * h)
+                # Collect the normalized landmarks
+                for i in range(len(hand_landmarks.landmark)):
+                    x = hand_landmarks.landmark[i].x
+                    y = hand_landmarks.landmark[i].y
+                    x_.append(x)
+                    y_.append(y)
 
-                # Draw bounding box around the hand
-                cv2.rectangle(frame, (x_min, y_min), (x_max, y_max), (0, 255, 0), 2)
+                for i in range(len(hand_landmarks.landmark)):
+                    x = hand_landmarks.landmark[i].x
+                    y = hand_landmarks.landmark[i].y
+                    data_aux.append(x - min(x_))
+                    data_aux.append(y - min(y_))
 
-        # Predict the sign and get confidence
-        predicted_sign, confidence = video_predict_sign(frame)
+            # Calculate bounding box for drawing
+            x1 = int(min(x_) * W) - 5
+            y1 = int(min(y_) * H) - 5
+            x2 = int(max(x_) * W) - 20
+            y2 = int(max(y_) * H) - 20
 
-        # Overlay the predicted sign and confidence on the frame
-        cv2.putText(frame, f"Sign: {predicted_sign}", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
-        cv2.putText(frame, f"Confidence: {confidence:.4f}", (10, frame.shape[0] - 10), cv2.FONT_HERSHEY_SIMPLEX, 1,
-                    (255, 255, 255), 2)
+            try:
+                # Predict the sign and get confidence
+                predicted_character, confidence = video_predict_sign(data_aux)
+
+                # Draw bounding box and label on the frame
+                cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
+                cv2.putText(frame, predicted_character, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 1.3, (255, 255, 255),
+                            2, cv2.LINE_AA)
+                cv2.putText(frame, f'Confidence: {confidence:.2f}%', (10, H - 10), cv2.FONT_HERSHEY_SIMPLEX, 1,
+                            (255, 255, 255), 2, cv2.LINE_AA)
+
+            except Exception as e:
+                print(f"Error during prediction: {e}")
 
         # Encode the frame and send it to the web page
         ret, jpeg = cv2.imencode('.jpg', frame)
