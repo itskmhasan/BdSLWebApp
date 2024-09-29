@@ -40,17 +40,15 @@
         <p id="predicted_sign">Sign: </p>
         <p id="confidence">Confidence: </p>
     </div>
+
 </div>
 
 <script>
-    // This script can be used to update the sign and confidence dynamically
+
     function updateResults(sign, confidence) {
         document.getElementById('predicted_sign').innerText = `Sign: ${sign}`;
         document.getElementById('confidence').innerText = `Confidence: ${confidence.toFixed(2)}`;
     }
-
-    // You can set an interval to fetch the latest data if needed
-    // Or implement WebSocket for real-time updates if desired
 </script>
 </body>
 </html>
