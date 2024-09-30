@@ -2,10 +2,11 @@ import pickle
 import cv2
 import numpy as np
 import mediapipe as mp
-from django.http import StreamingHttpResponse
+from django.http import StreamingHttpResponse, JsonResponse
 from django.shortcuts import render
 from django.conf import settings
 import os
+from googletrans import Translator  # Import Google Translate
 
 # Load the model
 model_dict = pickle.load(open(os.path.join(settings.BASE_DIR, 'model.p'), 'rb'))
@@ -20,6 +21,12 @@ hands = mp_hands.Hands(static_image_mode=True, min_detection_confidence=0.3)
 # Labels dictionary (mapping prediction index to sign)
 labels_dict = model_dict['labels_dict']
 
+# Initialize Google Translator
+translator = Translator()
+
+# Variable to store the latest translated text
+latest_translated_text = ""
+
 
 def video_predict_sign(data_aux):
     # Make prediction using the model
@@ -30,7 +37,18 @@ def video_predict_sign(data_aux):
     return predicted_character, confidence
 
 
+def translate_text(text, src_lang='en', dest_lang='bn'):
+    """Translate text from the source language to the destination language (e.g., Bengali)."""
+    try:
+        translation = translator.translate(text, src=src_lang, dest=dest_lang)
+        return translation.text
+    except Exception as e:
+        print(f"Translation error: {e}")
+        return text  # Return the original text if translation fails
+
+
 def video_stream():
+    global latest_translated_text  # Make sure we can update the translated text
     cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)  # Capture from the default camera
 
     if not cap.isOpened():
@@ -92,11 +110,14 @@ def video_stream():
                 # Predict the sign and get confidence
                 predicted_character, confidence = video_predict_sign(data_aux)
 
+                # Translate the predicted sign to Bengali
+                latest_translated_text = translate_text(predicted_character, dest_lang='bn')
+
                 # Draw bounding box and label on the frame
                 cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
                 cv2.putText(frame, predicted_character, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 1.3, (255, 255, 255),
                             2, cv2.LINE_AA)
-                cv2.putText(frame, f'Confidence: {confidence:.2f}%', (10, H - 10), cv2.FONT_HERSHEY_SIMPLEX, 1,
+                cv2.putText(frame, f'Confidence: {confidence:.2f}%', (10, H - 20), cv2.FONT_HERSHEY_SIMPLEX, 1,
                             (255, 255, 255), 2, cv2.LINE_AA)
 
             except Exception as e:
@@ -106,11 +127,16 @@ def video_stream():
         ret, jpeg = cv2.imencode('.jpg', frame)
         if not ret:
             break
-
         yield (b'--frame\r\n'
                b'Content-Type: image/jpeg\r\n\r\n' + jpeg.tobytes() + b'\r\n\r\n')
 
     cap.release()
+
+
+def get_translation(request):
+    """API endpoint to send the latest translated text."""
+    global latest_translated_text
+    return JsonResponse({'translated_text': latest_translated_text})
 
 
 # View for real-time video feed
