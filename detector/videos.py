@@ -115,16 +115,16 @@ def video_stream():
 
                 # Draw bounding box and label on the frame
                 cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
-                cv2.putText(frame, predicted_character, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 1.3, (255, 255, 255),
-                            2, cv2.LINE_AA)
+                # cv2.putText(frame, predicted_character, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 1.3, (255, 255, 255),
+                #             2, cv2.LINE_AA)
                 cv2.putText(frame, f'Confidence: {confidence:.2f}%', (10, H - 20), cv2.FONT_HERSHEY_SIMPLEX, 1,
                             (255, 255, 255), 2, cv2.LINE_AA)
 
             except Exception as e:
                 print(f"Error during prediction: {e}")
 
-        # Encode the frame and send it to the web page
-        ret, jpeg = cv2.imencode('.jpg', frame)
+        encode_param = [int(cv2.IMWRITE_JPEG_QUALITY), 50]  # Set JPEG quality to 50 for faster encoding
+        ret, jpeg = cv2.imencode('.jpg', frame, encode_param)
         if not ret:
             break
         yield (b'--frame\r\n'

@@ -76,50 +76,51 @@
 </head>
 <body>
 
-    <!-- Title Section -->
-    <div class="title-card">
-        <h1>
-            <i class="fa-solid fa-face-smile"></i> Detect Emotions from Sign Language <i class="fas fa-sign-language"></i>
-        </h1>
-    </div>
+<!-- Title Section -->
+<div class="title-card">
+    <h1>
+        <i class="fa-solid fa-face-smile"></i> Detect Emotions from Sign Language <i class="fas fa-sign-language"></i>
+    </h1>
+</div>
 
-    <!-- Video Container -->
-    <div id="video-container">
-        <img id="video" src="{% url 'video_feed' %}" alt="Video Feed">
-    </div>
+<!-- Video Container -->
+<div id="video-container">
+    <img id="video" src="{% url 'video_feed' %}" alt="Video Feed" style="max-width: 100%; height: auto;">
 
-    <!-- Translated Text -->
-    <p id="translated-text">Translated (Bengali): </p> <!-- Translated text will be displayed here -->
+</div>
 
-    <!-- Action Button -->
-    <div class="d-grid">
-        <a href="{% url 'index' %}" class="btn btn-info">
-            <i class="fas fa-upload"></i> Upload Images
-        </a>
-    </div>
+<!-- Translated Text -->
+<p id="translated-text">Detected: </p> <!-- Translated text will be displayed here -->
 
-    <!-- JavaScript for fetching translation -->
-    <script>
-        async function fetchTranslation() {
-            try {
-                const response = await fetch('/get_translation/');
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-                const data = await response.json();
-                document.getElementById('translated-text').innerText = `Translated (Bengali): ${data.translated_text}`;
-            } catch (error) {
-                console.error("Error fetching translation:", error);
+<!-- Action Button -->
+<div class="d-grid">
+    <a href="{% url 'index' %}" class="btn btn-info">
+        <i class="fas fa-upload"></i> Upload Images
+    </a>
+</div>
+
+<!-- JavaScript for fetching translation -->
+<script>
+    async function fetchTranslation() {
+        try {
+            const response = await fetch('/get_translation/');
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
             }
+            const data = await response.json();
+            document.getElementById('translated-text').innerText = `Detected: ${data.translated_text}`;
+        } catch (error) {
+            console.error("Error fetching translation:", error);
         }
+    }
 
-        function startFetchingTranslation() {
-            setInterval(fetchTranslation, 1000);  // Fetch translation every second
-        }
+    function startFetchingTranslation() {
+        setInterval(fetchTranslation, 1000);  // Fetch translation every second
+    }
 
-        // Start fetching translation when the page loads
-        startFetchingTranslation();
-    </script>
+    // Start fetching translation when the page loads
+    startFetchingTranslation();
+</script>
 
 </body>
 </html>
