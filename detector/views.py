@@ -65,8 +65,8 @@ def predict_sign(image_path):
         predicted_sign = str(labels_dict[predicted_index])  # Get the predicted sign
         confidence = prediction_probs[0][predicted_index] * 100  # Get confidence as a percentage
 
-        # Translate the detected sign to Bengali
         translated_sign = translate_to_bengali(predicted_sign)
+        print(translated_sign)
 
         return predicted_sign, translated_sign, confidence  # Return predicted sign, translation, and confidence
     else:
@@ -74,13 +74,12 @@ def predict_sign(image_path):
 
 
 def translate_to_bengali(text):
-    """Translate the detected sign to Bengali."""
     try:
         translation = translator.translate(text, src='en', dest='bn')
         return translation.text
     except Exception as e:
         print(f"Translation error: {e}")
-        return text  # Return original text if translation fails
+        return text
 
 
 def upload_image(request):
