@@ -12,13 +12,14 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
 
     <style>
-         body {
+        body {
             background-color: #f8f9fa;
             display: flex;
             justify-content: center;
             align-items: center;
             height: 100vh;
         }
+
         .result-container {
             max-width: 500px;
             padding: 30px;
@@ -51,9 +52,9 @@
 <body>
 <div class="container result-container">
     <div class="result-card text-center">
-<!--        <h2 class="mb-4">Predicted Sign En: <span class="text-primary">{{ predicted_sign }}</span></h2>-->
-<!--        &lt;!&ndash; Apply the Tiro Bangla font to the translated Bengali text &ndash;&gt;-->
-        <h2 class="mb-4 bengali-text">Predicted Sign Bn: <span class="text-white">{{ translated_sign }}</span></h2>
+        <!--        <h2 class="mb-4">Predicted Sign En: <span class="text-primary">{{ predicted_sign }}</span></h2>-->
+        <!--        &lt;!&ndash; Apply the Tiro Bangla font to the translated Bengali text &ndash;&gt;-->
+        <h2 class="mb-4 bengali-text">Predicted Sign: <span class="text-white">{{ translated_sign }}</span></h2>
         <img src="{{ image_url }}" alt="Background removed image" class="image-preview mb-4">
 
         <!-- Show confidence message -->

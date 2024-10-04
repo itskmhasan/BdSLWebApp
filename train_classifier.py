@@ -5,7 +5,7 @@ from sklearn.metrics import accuracy_score
 import numpy as np
 
 # Load your data here
-data_dict = pickle.load(open('./data.pickle', 'rb'))
+data_dict = pickle.load(open('data.pickle', 'rb'))
 
 # Print data structure for debugging
 print("Data Dictionary:", data_dict)
@@ -17,7 +17,7 @@ data = []
 labels = []
 
 # Capture the expected length based on your dataset
-expected_length = 42  # Update this based on the expected number of features
+expected_length = 84  # Update this based on the expected number of features
 
 for i, item in enumerate(data_dict['data']):
     if len(item) == expected_length:
@@ -38,7 +38,7 @@ print("Filtered labels:", len(labels))
 if len(data) == 0 or len(labels) == 0:
     print("Error: No valid samples to train on.")
 else:
-    x_train, x_test, y_train, y_test = train_test_split(data, labels, test_size=0.2, shuffle=True, stratify=labels)
+    x_train, x_test, y_train, y_test = train_test_split(data, labels, test_size=0.4, shuffle=True, stratify=labels)
 
     model = RandomForestClassifier()
     model.fit(x_train, y_train)

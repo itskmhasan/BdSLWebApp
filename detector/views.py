@@ -23,7 +23,7 @@ translator = Translator()
 
 # Initialize MediaPipe Hands
 mp_hands = mp.solutions.hands
-hands = mp_hands.Hands(static_image_mode=True, min_detection_confidence=0.3)
+hands = mp_hands.Hands(static_image_mode=True, min_detection_confidence=0.3, max_num_hands=2)
 
 
 def predict_sign(image_path):
@@ -58,6 +58,17 @@ def predict_sign(image_path):
                 y = hand_landmarks.landmark[i].y
                 data_aux.append(x - min(x_))
                 data_aux.append(y - min(y_))
+
+        # Check if one hand (42 values) or two hands (84 values) were detected
+        if len(data_aux) == 42:
+            # Pad with zeros to make it 84 features
+            data_aux.extend([0] * 42)
+        elif len(data_aux) == 84:
+            # Two-hand gesture, no need to modify data_aux
+            pass
+        else:
+            print(f"Unexpected data length: {len(data_aux)}")
+            return "Invalid data", "Invalid data", 0.0
 
         # Make prediction using the model
         prediction_probs = model.predict_proba([np.asarray(data_aux)])  # Get probabilities

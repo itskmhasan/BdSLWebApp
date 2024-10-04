@@ -100,6 +100,17 @@ def video_stream():
                     data_aux.append(x - min(x_))
                     data_aux.append(y - min(y_))
 
+            # Check if one hand (42 values) or two hands (84 values) were detected
+            if len(data_aux) == 42:
+                # Pad with zeros to make it 84 features
+                data_aux.extend([0] * 42)
+            elif len(data_aux) == 84:
+                # Two-hand gesture, no need to modify data_aux
+                pass
+            else:
+                print(f"Unexpected data length: {len(data_aux)}")
+                continue
+
             # Calculate bounding box for drawing
             x1 = int(min(x_) * W) - 5
             y1 = int(min(y_) * H) - 5
