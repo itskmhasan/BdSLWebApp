@@ -34,7 +34,6 @@ for dir_ in os.listdir(DATA_DIR):
                     data_aux.append(x - min(x_))
                     data_aux.append(y - min(y_))
 
-            # Ensure the generated data is of a consistent length
             if len(data_aux) == 42:
                 # One-hand detected, pad with zeros
                 data_aux.extend([0] * 42)
@@ -47,6 +46,5 @@ for dir_ in os.listdir(DATA_DIR):
             else:
                 print(f"Skipping inconsistent data with length: {len(data_aux)}")
 
-# Save the data
 with open('data.pickle', 'wb') as f:
     pickle.dump({'data': data, 'labels': labels}, f)
